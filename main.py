@@ -27,12 +27,19 @@ async def on_ready():
 # Bot commands
 @bot.command()
 async def log(ctx, time):
-    if int(time) > 0:
-        embed = discord.Embed(title="Successfully logged!", description=f"You have logged **{time} minutes**!")
-        await ctx.send(embed=embed)
-    else:
-        embed = discord.Embed(title="Action failed!", description="Please make sure that the time you inputed is **positive and not zero**")
+    try:
+        time = int(time)
+    except ValueError:
+        embed = discord.Embed(title="Type error!", description="Please make sure that the time you inputed is an **integer number**.")
         await ctx.send(embed=embed) 
+        return
+    if time <= 0:
+        embed = discord.Embed(title="Wrong Input!", description="Please make sure that the time you inputed is **positive and not zero**.")
+        await ctx.send(embed=embed)
+        return
+    
+    embed = discord.Embed(title="Successfully logged!", description=f"You have logged **{time} minutes**!")
+    await ctx.send(embed=embed)
 
 
 # Running the bot
