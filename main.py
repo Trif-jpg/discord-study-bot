@@ -76,6 +76,24 @@ async def log(ctx, time, *, date=None):
     await ctx.reply(embed=embed)
 
 @bot.command()
+async def stats(ctx):
+    total_time = 0
+    try:
+        with open("data.csv", mode="r") as file:
+            reader = csv.DictReader(file)
+            for row in reader:
+                if row["user_id"] == str(ctx.author.id):
+                    total_time += int(row["time"])
+    except FileNotFoundError:
+        total_time = 0
+
+    hours = total_time // 60
+    minutes = total_time % 60
+    embed = discord.Embed(title="Your Study Stats:", description=f"You have logged a total of **{hours} hours** and **{minutes} minutes**.")
+    await ctx.reply(embed=embed)
+
+
+@bot.command()
 async def history(ctx):
     try:
         with open("data.csv", mode="r") as file:
