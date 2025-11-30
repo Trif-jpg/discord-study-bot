@@ -163,10 +163,10 @@ async def history(ctx, user: discord.Member = None):
                 return
 
             description_lines = []
-            for i, log in enumerate(reversed(user_logs)):
-                hours = log["time"] // 60
-                minutes = log["time"] % 60
-                description_lines.append(f"{i+1}. **{hours} hours** and **{minutes} minutes** | {log['date']}")
+            for i, log_ in enumerate(reversed(user_logs)):
+                hours = log_["time"] // 60
+                minutes = log_["time"] % 60
+                description_lines.append(f"{i+1}. **{hours} hours** and **{minutes} minutes** | {log_['date']}")
 
             description = "\n".join(description_lines)
             if user:
