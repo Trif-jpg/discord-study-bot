@@ -38,6 +38,15 @@ async def on_ready():
 
 # Bot commands
 @bot.command()
+async def helpme(ctx):
+    embed = discord.Embed(title="List of commands:", description="Here are the available commands:")
+    embed.add_field(name="-log *<time in minutes>* *[date in DD-MM-YYYY]*", value="Logs your study time. If no date is provided, today's date is used.", inline=False)
+    embed.add_field(name="-history", value="Displays your logged study history.", inline=False)
+    if ctx.author.guild_permissions.administrator:
+        embed.add_field(name="-clear", value="*(Admin only)* Clears all logged data.", inline=False)
+    await ctx.reply(embed=embed)
+
+@bot.command()
 async def log(ctx, time, *, date=None):
     try:
         time = int(time)
@@ -85,6 +94,7 @@ async def history(ctx):
         embed = discord.Embed(title="No Logs Found!", description="You have no logged time yet.")
         await ctx.reply(embed=embed)
 
+# Admin commands
 @bot.command()
 @has_permissions(administrator=True)
 async def clear(ctx):
