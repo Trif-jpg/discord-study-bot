@@ -48,6 +48,25 @@ async def log(ctx, time):
     embed = discord.Embed(title="Successfully logged!", description=f"You have logged **{time} minutes**!")
     await ctx.send(embed=embed)
 
+@bot.command()
+async def history(ctx):
+    try:
+        with open("data.csv", mode="r") as file:
+            reader = csv.DictReader(file)
+            user_logs = [row for row in reader if row["user_id"] == str(ctx.author.id)]
+            
+            if not user_logs:
+                embed = discord.Embed(title="No Logs Found!", description="You have no logged time yet.")
+                await ctx.send(embed=embed)
+                return
+            
+            description = "\n".join([f"{i+1}. **{int(log['time']) // 60} hours** and **{int(log['time']) % 60} minutes**" for i, log in enumerate(reversed(user_logs))])
+            embed = discord.Embed(title="Your Log History:", description=description)
+            await ctx.send(embed=embed)
+    except FileNotFoundError:
+        embed = discord.Embed(title="No Logs Found!", description="You have no logged time yet.")
+        await ctx.send(embed=embed)
+
 
 # Running the bot
 bot.run(token, log_handler=handler, log_level=logging.DEBUG)
