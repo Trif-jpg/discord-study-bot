@@ -1,6 +1,6 @@
 import discord
 from discord.ext import commands
-from discord.ext.commands import has_permissions, MissingPermissions
+from discord.ext.commands import has_permissions
 import logging
 from datetime import datetime
 from dotenv import load_dotenv
@@ -56,18 +56,18 @@ async def log(ctx, time, *, date=None):
     try:
         time = int(time)
     except ValueError:
-        embed = discord.Embed(title="Type error!", description="Please make sure that the time you inputed is an **integer number**.")
+        embed = discord.Embed(title="Type error!", description="Please make sure that the time you inputted is an **integer number**.")
         await ctx.reply(embed=embed) 
         return
     if time <= 0:
-        embed = discord.Embed(title="Wrong Input!", description="Please make sure that the time you inputed is **positive and not zero**.")
+        embed = discord.Embed(title="Wrong Input!", description="Please make sure that the time you inputted is **positive and not zero**.")
         await ctx.reply(embed=embed)
         return
     
     if date is None:
         date = datetime.now().strftime("%d-%m-%Y")
     elif not validate(date):
-        embed = discord.Embed(title="Date Format Error!", description="Please make sure that the date you inputed is in the format **DD-MM-YYYY**.")
+        embed = discord.Embed(title="Date Format Error!", description="Please make sure that the date you inputted is in the format **DD-MM-YYYY**.")
         await ctx.reply(embed=embed)
         return
 
