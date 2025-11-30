@@ -7,8 +7,8 @@ The whole purpose of **Gary** was to be able to compete with your friends while 
 ### Commands
 **Gary** currently has 6 commands:
 1. **-helpme** which displays, on Discord, all commands that currently exist.
-2. **-log** which takes in two arguments (<time> <date>) and then later logs them in a *.csv* file alongside the user's id.
-    - The argument <time> is expected to be *minutes* and the argument <date> in the format of *DD-MM-YY*.
+2. **-log** which takes in two arguments (*time* *date*) and then later logs them in a *.csv* file alongside the user's id.
+    - The argument *time* is expected to be *minutes* and the argument *date* in the format of *DD-MM-YY*.
     - In case *no date* is added while executing the command, **Gary** will log the current date, at the time the command is executed.
 3. **-history** which displays all of the users past logs which are saved in the *.csv* file from most recent to oldest.
 4. **-stats** which display the user's *total time* that has been logged at that time. 
