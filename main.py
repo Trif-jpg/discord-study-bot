@@ -82,14 +82,14 @@ async def log(ctx, time, *, date=None):
     await ctx.reply(embed=embed)
 
 @bot.command()
-async def stats(ctx):
+async def stats(ctx, user: discord.Member = None):
     total_time = 0
     try:
         with open(DATA_FILE, mode="r", encoding="utf-8") as file:
             reader = csv.DictReader(file)
             for row in reader:
                 try:
-                    if row.get("user_id") == str(ctx.author.id):
+                    if row.get("user_id") == str(user.id if user else ctx.author.id):
                         total_time += int(row.get("time", 0))
                 except (ValueError, TypeError):
                     continue
@@ -98,7 +98,10 @@ async def stats(ctx):
 
     hours = total_time // 60
     minutes = total_time % 60
-    embed = discord.Embed(title="Your Study Stats:", description=f"You have logged a total of **{hours} hours** and **{minutes} minutes**.")
+    if user:
+        embed = discord.Embed(title=f"{user.name}'s Study Stats:", description=f"{user.name} has logged a total of **{hours} hours** and **{minutes} minutes**.")
+    else:   
+        embed = discord.Embed(title="Your Study Stats:", description=f"You have logged a total of **{hours} hours** and **{minutes} minutes**.")
     await ctx.reply(embed=embed)
 
 @bot.command()
@@ -112,7 +115,6 @@ async def leaderboard(ctx):
                 try:
                     time = int(row.get("time", 0))
                 except (ValueError, TypeError):
-                    # skip malformed rows
                     continue
                 if not user_id:
                     continue
@@ -135,21 +137,17 @@ async def leaderboard(ctx):
         lines.append(f"{i+1}. **{user_name}** - {hours} hours and {minutes} minutes")
 
     description = "\n".join(lines) if lines else "No logged data."
-
-    if len(description) > 4000:
-        description = description[:3990] + "\n... (truncated)"
-
     embed = discord.Embed(title="Leaderboard:", description=description)
     await ctx.reply(embed=embed)
 
 @bot.command()
-async def history(ctx):
+async def history(ctx, user: discord.Member = None):
     try:
         with open(DATA_FILE, mode="r", encoding="utf-8") as file:
             reader = csv.DictReader(file)
             user_logs = []
             for row in reader:
-                if row.get("user_id") == str(ctx.author.id):
+                if row.get("user_id") == str(user.id if user else ctx.author.id):
                     try:
                         t = int(row.get("time", 0))
                     except (ValueError, TypeError):
@@ -157,7 +155,10 @@ async def history(ctx):
                     user_logs.append({"time": t, "date": row.get("date", "unknown")})
 
             if not user_logs:
-                embed = discord.Embed(title="No Logs Found!", description="You have no logged time yet.")
+                if user:
+                    embed = discord.Embed(title="No Logs Found!", description=f"{user.name} has no logged time yet.")
+                else:
+                    embed = discord.Embed(title="No Logs Found!", description="You have no logged time yet.")
                 await ctx.reply(embed=embed)
                 return
 
@@ -168,10 +169,16 @@ async def history(ctx):
                 description_lines.append(f"{i+1}. **{hours} hours** and **{minutes} minutes** | {log['date']}")
 
             description = "\n".join(description_lines)
-            embed = discord.Embed(title="Your Log History:", description=description)
+            if user:
+                embed = discord.Embed(title=f"{user.name}'s Log History:", description=description)
+            else:
+                embed = discord.Embed(title="Your Log History:", description=description)
             await ctx.reply(embed=embed)
     except FileNotFoundError:
-        embed = discord.Embed(title="No Logs Found!", description="You have no logged time yet.")
+        if user:
+            embed = discord.Embed(title="No Logs Found!", description=f"{user.name} has no logged time yet.")
+        else:
+            embed = discord.Embed(title="No Logs Found!", description="You have no logged time yet.")
         await ctx.reply(embed=embed)
 
 # Admin commands

@@ -13,7 +13,7 @@ The whole purpose of **Gary** was to be able to compete with your friends while 
 3. **-history** which displays all of the users past logs which are saved in the *.csv* file from most recent to oldest.
 4. **-stats** which display the user's *total time* that has been logged at that time. 
 5. **-leaderboard** which sorts the total time from all users from highest to lowest.
-6. **clear** is an Admin only command which deletes all data stored in the *.csv* file.
+6. **-clear** is an Admin only command which deletes all data stored in the *.csv* file.
 
 ### Future plans
 In the future I plan to make **Gary** a bit more interesting rather than a bunch of simple commands that track time.
