@@ -1,5 +1,6 @@
 import discord
 from discord.ext import commands
+from discord.ext.commands import has_permissions, MissingPermissions
 import logging
 from dotenv import load_dotenv
 import os
@@ -32,11 +33,11 @@ async def log(ctx, time):
         time = int(time)
     except ValueError:
         embed = discord.Embed(title="Type error!", description="Please make sure that the time you inputed is an **integer number**.")
-        await ctx.send(embed=embed) 
+        await ctx.reply(embed=embed) 
         return
     if time <= 0:
         embed = discord.Embed(title="Wrong Input!", description="Please make sure that the time you inputed is **positive and not zero**.")
-        await ctx.send(embed=embed)
+        await ctx.reply(embed=embed)
         return
     
     with open("data.csv", mode="a", newline="") as file:
@@ -46,7 +47,7 @@ async def log(ctx, time):
         writer.writeheader()
         writer.writerow({"user_id": ctx.author.id, "time": time})
     embed = discord.Embed(title="Successfully logged!", description=f"You have logged **{time} minutes**!")
-    await ctx.send(embed=embed)
+    await ctx.reply(embed=embed)
 
 @bot.command()
 async def history(ctx):
@@ -57,15 +58,27 @@ async def history(ctx):
             
             if not user_logs:
                 embed = discord.Embed(title="No Logs Found!", description="You have no logged time yet.")
-                await ctx.send(embed=embed)
+                await ctx.reply(embed=embed)
                 return
             
             description = "\n".join([f"{i+1}. **{int(log['time']) // 60} hours** and **{int(log['time']) % 60} minutes**" for i, log in enumerate(reversed(user_logs))])
             embed = discord.Embed(title="Your Log History:", description=description)
-            await ctx.send(embed=embed)
+            await ctx.reply(embed=embed)
     except FileNotFoundError:
         embed = discord.Embed(title="No Logs Found!", description="You have no logged time yet.")
-        await ctx.send(embed=embed)
+        await ctx.reply(embed=embed)
+
+@bot.command()
+@has_permissions(administrator=True)
+async def clear(ctx):
+    if MissingPermissions == False:
+        embed = discord.Embed(title="Permission Denied!", description="You do not have the required permissions to use this command.")
+        await ctx.reply(embed=embed)
+        return
+
+    open("data.csv", mode="w").close()
+    embed = discord.Embed(title="Data Cleared!", description="All logged data has been cleared.")
+    await ctx.reply(embed=embed)
 
 
 # Running the bot
