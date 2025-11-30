@@ -2,6 +2,7 @@ import discord
 from discord.ext import commands
 from discord.ext.commands import has_permissions, MissingPermissions
 import logging
+from datetime import datetime
 from dotenv import load_dotenv
 import os
 import csv
@@ -21,6 +22,15 @@ intents.members = True
 # Creating the bot instance
 bot = commands.Bot(command_prefix='-', intents=intents)
 
+# Functions
+def validate(date_text):
+    try:
+        if date_text != datetime.strptime(date_text, "%d-%m-%Y").strftime('%d-%m-%Y'):
+            raise ValueError
+        return True
+    except ValueError:
+        return False
+
 # Bot events
 @bot.event
 async def on_ready():
@@ -28,7 +38,7 @@ async def on_ready():
 
 # Bot commands
 @bot.command()
-async def log(ctx, time):
+async def log(ctx, time, *, date=None):
     try:
         time = int(time)
     except ValueError:
@@ -40,13 +50,20 @@ async def log(ctx, time):
         await ctx.reply(embed=embed)
         return
     
-    with open("data.csv", mode="a", newline="") as file:
-        fieldnames = ["user_id", "time"]
-        writer = csv.DictWriter(file, fieldnames=fieldnames)
+    if date is None:
+        date = datetime.now().strftime("%d-%m-%Y")
+    elif not validate(date):
+        embed = discord.Embed(title="Date Format Error!", description="Please make sure that the date you inputed is in the format **DD-MM-YYYY**.")
+        await ctx.reply(embed=embed)
+        return
 
+    with open("data.csv", mode="a", newline="") as file:
+        fieldnames = ["user_id", "time", "date"] 
+        writer = csv.DictWriter(file, fieldnames=fieldnames)
         writer.writeheader()
-        writer.writerow({"user_id": ctx.author.id, "time": time})
-    embed = discord.Embed(title="Successfully logged!", description=f"You have logged **{time} minutes**!")
+        
+        writer.writerow({"user_id": ctx.author.id, "time": time, "date": date})
+    embed = discord.Embed(title="Successfully logged!", description=f"You have logged **{time} minutes** on **{date}**!")
     await ctx.reply(embed=embed)
 
 @bot.command()
@@ -61,7 +78,7 @@ async def history(ctx):
                 await ctx.reply(embed=embed)
                 return
             
-            description = "\n".join([f"{i+1}. **{int(log['time']) // 60} hours** and **{int(log['time']) % 60} minutes**" for i, log in enumerate(reversed(user_logs))])
+            description = "\n".join([f"{i+1}. **{int(log['time']) // 60} hours** and **{int(log['time']) % 60} minutes** | {log["date"]}" for i, log in enumerate(reversed(user_logs))])
             embed = discord.Embed(title="Your Log History:", description=description)
             await ctx.reply(embed=embed)
     except FileNotFoundError:
