@@ -70,7 +70,10 @@ async def log(ctx, time, *, date=None):
     with open("data.csv", mode="a", newline="") as file:
         fieldnames = ["user_id", "time", "date"] 
         writer = csv.DictWriter(file, fieldnames=fieldnames)
-        writer.writeheader()
+        
+        # Only write header if file is empty
+        if file.tell() == 0:
+            writer.writeheader()
         
         writer.writerow({"user_id": ctx.author.id, "time": time, "date": date})
     embed = discord.Embed(title="Successfully logged!", description=f"You have logged **{time} minutes** on **{date}**!")
@@ -93,6 +96,38 @@ async def stats(ctx):
     embed = discord.Embed(title="Your Study Stats:", description=f"You have logged a total of **{hours} hours** and **{minutes} minutes**.")
     await ctx.reply(embed=embed)
 
+@bot.command()
+async def leaderboard(ctx):
+    user_times = {}
+    try:
+        with open("data.csv", mode="r") as file:
+            reader = csv.DictReader(file)
+            for row in reader:
+                user_id = row["user_id"]
+                time = int(row["time"])
+                if user_id in user_times:
+                    user_times[user_id] += time
+                else:
+                    user_times[user_id] = time
+    except FileNotFoundError:
+        embed = discord.Embed(title="No Data!", description="No logged data found.")
+        await ctx.reply(embed=embed)
+        return
+
+    sorted_users = sorted(user_times.items(), key=lambda x: x[1], reverse=True)[:10]
+    description = ""
+    for i, (user_id, time) in enumerate(sorted_users):
+        try:
+            user = await bot.fetch_user(int(user_id))
+            user_name = user.name
+        except discord.NotFound:
+            user_name = "Unknown User"
+        hours = time // 60
+        minutes = time % 60
+        description += f"{i+1}. **{user_name}** - {hours} hours and {minutes} minutes\n"
+
+    embed = discord.Embed(title="Leaderboard:", description=description)
+    await ctx.reply(embed=embed)
 
 @bot.command()
 async def history(ctx):
