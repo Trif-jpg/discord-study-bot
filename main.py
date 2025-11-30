@@ -22,6 +22,9 @@ intents.members = True
 # Creating the bot instance
 bot = commands.Bot(command_prefix='-', intents=intents)
 
+# Data file constant
+DATA_FILE = "data.csv"
+
 # Functions
 def validate(date_text):
     try:
@@ -68,15 +71,13 @@ async def log(ctx, time, *, date=None):
         await ctx.reply(embed=embed)
         return
 
-    with open("data.csv", mode="a", newline="") as file:
-        fieldnames = ["user_id", "time", "date"] 
+    with open(DATA_FILE, mode="a", newline="", encoding="utf-8") as file:
+        fieldnames = ["user_id", "time", "date"]
         writer = csv.DictWriter(file, fieldnames=fieldnames)
-        
-        # Only write header if file is empty
+
         if file.tell() == 0:
             writer.writeheader()
-        
-        writer.writerow({"user_id": ctx.author.id, "time": time, "date": date})
+        writer.writerow({"user_id": str(ctx.author.id), "time": time, "date": date})
     embed = discord.Embed(title="Successfully logged!", description=f"You have logged **{time} minutes** on **{date}**!")
     await ctx.reply(embed=embed)
 
@@ -84,11 +85,14 @@ async def log(ctx, time, *, date=None):
 async def stats(ctx):
     total_time = 0
     try:
-        with open("data.csv", mode="r") as file:
+        with open(DATA_FILE, mode="r", encoding="utf-8") as file:
             reader = csv.DictReader(file)
             for row in reader:
-                if row["user_id"] == str(ctx.author.id):
-                    total_time += int(row["time"])
+                try:
+                    if row.get("user_id") == str(ctx.author.id):
+                        total_time += int(row.get("time", 0))
+                except (ValueError, TypeError):
+                    continue
     except FileNotFoundError:
         total_time = 0
 
@@ -101,31 +105,39 @@ async def stats(ctx):
 async def leaderboard(ctx):
     user_times = {}
     try:
-        with open("data.csv", mode="r") as file:
+        with open(DATA_FILE, mode="r", encoding="utf-8") as file:
             reader = csv.DictReader(file)
             for row in reader:
-                user_id = row["user_id"]
-                time = int(row["time"])
-                if user_id in user_times:
-                    user_times[user_id] += time
-                else:
-                    user_times[user_id] = time
+                user_id = row.get("user_id")
+                try:
+                    time = int(row.get("time", 0))
+                except (ValueError, TypeError):
+                    # skip malformed rows
+                    continue
+                if not user_id:
+                    continue
+                user_times[user_id] = user_times.get(user_id, 0) + time
     except FileNotFoundError:
         embed = discord.Embed(title="No Data!", description="No logged data found.")
         await ctx.reply(embed=embed)
         return
 
     sorted_users = sorted(user_times.items(), key=lambda x: x[1], reverse=True)[:10]
-    description = ""
+    lines = []
     for i, (user_id, time) in enumerate(sorted_users):
         try:
             user = await bot.fetch_user(int(user_id))
             user_name = user.name
-        except discord.NotFound:
+        except Exception:
             user_name = "Unknown User"
         hours = time // 60
         minutes = time % 60
-        description += f"{i+1}. **{user_name}** - {hours} hours and {minutes} minutes\n"
+        lines.append(f"{i+1}. **{user_name}** - {hours} hours and {minutes} minutes")
+
+    description = "\n".join(lines) if lines else "No logged data."
+
+    if len(description) > 4000:
+        description = description[:3990] + "\n... (truncated)"
 
     embed = discord.Embed(title="Leaderboard:", description=description)
     await ctx.reply(embed=embed)
@@ -133,16 +145,29 @@ async def leaderboard(ctx):
 @bot.command()
 async def history(ctx):
     try:
-        with open("data.csv", mode="r") as file:
+        with open(DATA_FILE, mode="r", encoding="utf-8") as file:
             reader = csv.DictReader(file)
-            user_logs = [row for row in reader if row["user_id"] == str(ctx.author.id)]
-            
+            user_logs = []
+            for row in reader:
+                if row.get("user_id") == str(ctx.author.id):
+                    try:
+                        t = int(row.get("time", 0))
+                    except (ValueError, TypeError):
+                        continue
+                    user_logs.append({"time": t, "date": row.get("date", "unknown")})
+
             if not user_logs:
                 embed = discord.Embed(title="No Logs Found!", description="You have no logged time yet.")
                 await ctx.reply(embed=embed)
                 return
-            
-            description = "\n".join([f"{i+1}. **{int(log['time']) // 60} hours** and **{int(log['time']) % 60} minutes** | {log["date"]}" for i, log in enumerate(reversed(user_logs))])
+
+            description_lines = []
+            for i, log in enumerate(reversed(user_logs)):
+                hours = log["time"] // 60
+                minutes = log["time"] % 60
+                description_lines.append(f"{i+1}. **{hours} hours** and **{minutes} minutes** | {log['date']}")
+
+            description = "\n".join(description_lines)
             embed = discord.Embed(title="Your Log History:", description=description)
             await ctx.reply(embed=embed)
     except FileNotFoundError:
@@ -153,12 +178,7 @@ async def history(ctx):
 @bot.command()
 @has_permissions(administrator=True)
 async def clear(ctx):
-    if MissingPermissions == False:
-        embed = discord.Embed(title="Permission Denied!", description="You do not have the required permissions to use this command.")
-        await ctx.reply(embed=embed)
-        return
-
-    open("data.csv", mode="w").close()
+    open(DATA_FILE, mode="w", encoding="utf-8").close()
     embed = discord.Embed(title="Data Cleared!", description="All logged data has been cleared.")
     await ctx.reply(embed=embed)
 
