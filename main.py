@@ -3,6 +3,7 @@ from discord.ext import commands
 import logging
 from dotenv import load_dotenv
 import os
+import csv
 
 # Getting the bot token from environment variables
 load_dotenv()
@@ -38,6 +39,12 @@ async def log(ctx, time):
         await ctx.send(embed=embed)
         return
     
+    with open("data.csv", mode="a", newline="") as file:
+        fieldnames = ["user_id", "time"]
+        writer = csv.DictWriter(file, fieldnames=fieldnames)
+
+        writer.writeheader()
+        writer.writerow({"user_id": ctx.author.id, "time": time})
     embed = discord.Embed(title="Successfully logged!", description=f"You have logged **{time} minutes**!")
     await ctx.send(embed=embed)
 
