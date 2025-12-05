@@ -6,6 +6,8 @@ from datetime import datetime
 from dotenv import load_dotenv
 import os
 import csv
+import matplotlib.pyplot as plt
+from collections import defaultdict
 
 # Getting the bot token from environment variables
 load_dotenv()
@@ -104,6 +106,29 @@ async def stats(ctx, user: discord.Member = None):
         embed = discord.Embed(title="Your Study Stats:", description=f"You have logged a total of **{hours} hours** and **{minutes} minutes**.")
     await ctx.reply(embed=embed)
 
+@bot.command()
+async def plot(ctx):
+    user_time = defaultdict(int)
+    with open(DATA_FILE, mode="r", encoding="utf-8") as file:
+        reader = csv.DictReader(file)
+        for row in reader:
+            user_id = int(row['user_id'])
+            user_time[user_id] += int(row['time'])
+
+    users = []
+    times = []
+    for uid, total in user_time.items():
+        member = ctx.guild.get_member(uid)
+        if member is not None:
+            users.append(member.display_name)
+            times.append(total)
+
+    fig, ax = plt.subplots()
+    ax.pie(times, labels=users, autopct='%1.1f%%', shadow=True, startangle=90)
+    plt.tight_layout()
+    plt.savefig("output.png")
+    await ctx.send(file=discord.File('output.png'))
+    
 @bot.command()
 async def leaderboard(ctx):
     user_times = {}
